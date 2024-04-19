@@ -1,0 +1,91 @@
+import { useState, useEffect } from "react";
+
+
+export default function App() {
+  const [input, setInput] = useState("")
+  const [list, setList] = useState([])
+  const [history, setHistory] = useState([[]])
+
+  //when page loads, if list val in storage not null then set list to list val
+  useEffect(() => {
+    const todoStorage = window.localStorage.getItem("LIST_OF_TODOS")
+    if(todoStorage == null){return
+      }else{setList(JSON.parse(todoStorage));}
+  }, [])
+  //when page loads, if history val in storage not null then set history to list val
+  useEffect(() => {
+    const historyStorage = window.localStorage.getItem("LIST_OF_HISTORY")
+    if(historyStorage == null){return
+      }else{setHistory(JSON.parse(historyStorage))}
+  }, [])
+  //handle checkbox change
+  function handleCheckChange(e) {    
+    const checkkey = e.target.getAttribute("checkboxkey")
+    setHistory([...history, list])
+    window.localStorage.setItem("LIST_OF_HISTORY", JSON.stringify([...history, list]))
+    const newList = list.map(
+      (element) => {
+        if(element.key == checkkey){
+          return {...element, isChecked: !(element.isChecked)}
+        }return element;
+      }
+    )
+    setList(newList)
+    window.localStorage.setItem("LIST_OF_TODOS", JSON.stringify(newList))
+  }
+  //handle delete button
+  function handleRemoveClick(e) {
+    const buttonKey = e.target.getAttribute("buttonkey") 
+    list.forEach(
+      (element, index) => {
+        if(element.key == buttonKey){
+          setHistory([...history, list])
+          window.localStorage.setItem("LIST_OF_HISTORY", JSON.stringify([...history, list]))
+          setList(list.toSpliced(index, 1))
+          window.localStorage.setItem("LIST_OF_TODOS", JSON.stringify((list.toSpliced(index, 1))))
+        }
+      }
+    )
+  }
+  //handle submit button
+  function handleSubmit() {
+    if(input == ""){return}
+    let key = Math.floor(100000 + Math.random() * 900000)
+      setHistory([...history, list])
+      window.localStorage.setItem("LIST_OF_HISTORY", JSON.stringify([...history, list]))
+      setList([...list, {key: key, value: input, isChecked:false}]) 
+      setInput("")
+      window.localStorage.setItem("LIST_OF_TODOS", JSON.stringify([...list, {key: key, value: input, isChecked:false}]))
+      console.log(`storage set to "${JSON.stringify(list)}"`)
+  }
+  //handle undo button
+  function handleHistoryClick(){
+    if((history[history.length-1]) == undefined){return}
+    const newHistory = history.pop()
+    setList(newHistory)
+    window.localStorage.setItem("LIST_OF_TODOS", JSON.stringify(newHistory))
+    setHistory([...history])
+    window.localStorage.setItem("LIST_OF_HISTORY", JSON.stringify([...history]))
+  }
+  return (
+    <div className="App">
+      <h1>To Do</h1>
+      <input  id="input" type="text" value={input} onChange={(e) => setInput(e.target.value)} ></input>
+      <button onClick={handleSubmit}>Submit</button>
+      <button onClick={handleHistoryClick}>Undo</button>
+      <div id="container">
+        <ol>
+          {list.map(({key, value, isChecked}) =>
+            <>
+              {isChecked == true && <li id="strike" key={key}>{value}</li>}
+              {isChecked == false && <li key={key}>{value}</li>}
+              <input type="checkbox" checkboxkey={key} onChange={handleCheckChange} checked={isChecked}></input>
+              <button buttonkey={key} onClick={handleRemoveClick}>Remove</button>
+              <br />
+           </>)
+          }
+        </ol>
+      </div>
+    </div>
+  );
+}
